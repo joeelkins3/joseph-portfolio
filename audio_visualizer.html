@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Music Visualizer</title>
+<style>
+    body {
+        margin: 0;
+        background: #0f0f0f;
+        color: white;
+        font-family: sans-serif;
+        text-align: center;
+    }
+
+    h1 {
+        margin: 20px 0;
+    }
+
+    #controls {
+        margin-bottom: 10px;
+    }
+
+    canvas {
+        display: block;
+        margin: 0 auto;
+        background: radial-gradient(circle at center, #111, #000);
+    }
+
+    button, input {
+        background: #222;
+        color: white;
+        border: 1px solid #444;
+        padding: 6px 10px;
+        margin: 5px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #333;
+    }
+</style>
+</head>
+
+<body>
+<h1>Music Visualizer</h1>
+
+<div id="controls">
+    <input type="file" id="fileInput" accept="audio/*">
+    <button id="playBtn">Play</button>
+</div>
+
+<canvas id="canvas" width="900" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const audio = new Audio();
+let audioContext, analyser, source;
+let dataArray, bufferLength;
+let isPlaying = false;
+
+// ---------- AUDIO SETUP ----------
+function setupAudio() {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioContext.createAnalyser();
+
+    analyser.fftSize = 256; // controls detail level
+    bufferLength = analyser.frequencyBinCount;
+    dataArray = new Uint8Array(bufferLength);
+
+    source = audioContext.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+}
+
+// ---------- FILE LOAD ----------
+document.getElementById("fileInput").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    audio.src = URL.createObjectURL(file);
+    audio.load();
+
+    if (!audioContext) setupAudio();
+});
+
+// ---------- PLAY / PAUSE ----------
+document.getElementById("playBtn").addEventListener("click", () => {
+    if (!audioContext) return;
+
+    if (audioContext.state === "suspended") {
+        audioContext.resume();
+    }
+
+    if (isPlaying) {
+        audio.pause();
+    } else {
+        audio.play();
+        draw();
+    }
+
+    isPlaying = !isPlaying;
+});
+
+// ---------- VISUALIZER ----------
+function draw() {
+    requestAnimationFrame(draw);
+
+    analyser.getByteFrequencyData(dataArray);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const barWidth = canvas.width / bufferLength;
+
+    for (let i = 0; i < bufferLength; i++) {
+        const value = dataArray[i];
+        const barHeight = value * 1.5;
+
+        const x = i * barWidth;
+        const y = canvas.height - barHeight;
+
+        // Color based on frequency
+        ctx.fillStyle = `hsl(${i * 2}, 80%, 60%)`;
+        ctx.fillRect(x, y, barWidth - 2, barHeight);
+    }
+}
+</script>
+</body>
+</html>
