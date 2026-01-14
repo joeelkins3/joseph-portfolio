@@ -6,7 +6,6 @@
         #maze {
             display: grid;
         margin: 20px auto;
-        width: max-content;
         }
         .cell{
             width: 40px;
@@ -54,6 +53,7 @@
         const mazeDiv = document.getElementById("maze");
         mazeDiv.style.gridTemplateRows = `repeat(${rows}, 40px)`;
         mazeDiv.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
+        mazeDiv.style.width = `${cols * 40}px`;
 
     function drawMaze() {
         mazeDiv.innerHTML = '';
