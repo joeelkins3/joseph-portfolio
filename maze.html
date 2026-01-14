@@ -117,14 +117,30 @@
         }
     }
 
-    const cells = document.querySelectorAll(".cell");
+    const path = [];
     let cur = end;
 
-    while (cur[0] !== start[0] || cur[1] !== start[1]) {
-        const index = cur[0] * cols + cur[1];
-        cells[index].classList.add("path");
+    while (cur && (cur[0] !== start[0] || cur[1] !== start[1])) {
+        path.push(cur);
         cur = parent[cur[0]][cur[1]];
-    }
+}
+    path.push(start);
+    path.reverse();
+        
+    const cells = document.querySelectorAll(".cell");
+    let i = 0;
+
+    const interval = setInterval(() => {
+        const [r, c] = path[i];
+        const index = r * cols + c;
+
+    cells[index].classList.add("path");
+
+    i++;
+    if (i >= path.length) clearInterval(interval);
+}, 150); // speed in ms
+
+
     }
 </script>
 
