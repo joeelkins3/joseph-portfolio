@@ -51,7 +51,8 @@
         const cols = maze[0].length;
 
         const mazeDiv = document.getElementById("maze");
-        mazeDiv.style.gridTemplateRows = `repeat(${rows}, 40px})`;
+        mazeDiv.style.gridTemplateRows = `repeat(${rows}, 40px)`;
+        mazeDiv.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
 
     function drawMaze() {
         mazeDiv.innerHTML = '';
