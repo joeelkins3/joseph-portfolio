@@ -1,161 +1,156 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Optimal Maze Solutions</title>
+    <title>Random 16x16 Maze Solver</title>
     <style>
-        #maze {
-            display: grid;
-        margin: 20px auto;
-        }
-        .cell{
-            width: 40px;
-            height: 40px;
-            box-sizing: border-box;
-            border: 1px solid #333;
-        }
-        .wall {
-            background: black;
-        }
-        .start{
-            background: green;
-        }
-        .end{
-            background: red
-        }
-        .path{
-            background: gold;
-        }
         body {
             font-family: sans-serif;
             background: #111;
             color: white;
             text-align: center;
         }
+        #maze {
+            display: grid;
+            gap: 1px;
+            margin: 20px auto;
+            background: #333;
+            width: fit-content;
+        }
+        .cell {
+            width: 40px;
+            height: 40px;
+            background: #222;
+        }
+        .wall { background: black; }
+        .start { background: green; }
+        .end { background: red; }
+        .path { background: gold; }
     </style>
 </head>
 <body>
-<h1>Optimal Maze Solutions</h1>
+<h1>Random 16×16 Maze Solver</h1>
 <div id="maze"></div>
 <br>
 <button onclick="solve()">Solve Maze</button>
+<button onclick="generate()">New Maze</button>
 
 <script>
-    const maze = [
-    "S..#....#..#....",
-    ".##.#..##.#..#..",
-    "...#...#....##.",
-    "#..##.#..##.#...",
-    "...#...#..#....",
-    ".#..##..#..##.#.",
-    "..#.....##..#..",
-    "....#..#....#..",
-    ".##.#..##.#..#..",
-    "...#...#....##.",
-    "#..##.#..##.#...",
-    "...#...#..#....",
-    ".#..##..#..##.#.",
-    "..#.....##..#..",
-    "....#..#....#..",
-    "....#..#..#...E"
-    ];
-        const rows = maze.length;
-        const cols = maze[0].length;
+const ROWS = 16;
+const COLS = 16;
+let maze = [];
+const mazeDiv = document.getElementById("maze");
 
-        const mazeDiv = document.getElementById("maze");
-        mazeDiv.style.gridTemplateRows = `repeat(${rows}, 40px)`;
-        mazeDiv.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
-        mazeDiv.style.width = `${cols * 40}px`;
+function generate() {
+    // Generate random maze with ~30% walls
+    maze = Array.from({length: ROWS}, () =>
+        Array.from({length: COLS}, () => Math.random() < 0.3 ? '#' : '.')
+    );
 
-    function drawMaze() {
-        mazeDiv.innerHTML = '';
-
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                const cell = document.createElement("div");
-                cell.classList.add("cell");
-
-                if (maze[r][c] === '#') {
-                    cell.classList.add("wall");
-                } else if (maze[r][c] === 'S') {
-                    cell.classList.add("start");
-                } else if (maze[r][c] === 'E') {
-                    cell.classList.add("end");
-                }
-                mazeDiv.appendChild(cell);
-            }
-        }
+    // Random start on an edge
+    const startEdge = Math.floor(Math.random() * 4);
+    let start;
+    switch(startEdge){
+        case 0: start = [0, Math.floor(Math.random()*COLS)]; break;
+        case 1: start = [Math.floor(Math.random()*ROWS), COLS-1]; break;
+        case 2: start = [ROWS-1, Math.floor(Math.random()*COLS)]; break;
+        case 3: start = [Math.floor(Math.random()*ROWS), 0]; break;
     }
+
+    // End on opposite edge
+    let end;
+    switch(startEdge){
+        case 0: end = [ROWS-1, Math.floor(Math.random()*COLS)]; break;
+        case 1: end = [Math.floor(Math.random()*ROWS), 0]; break;
+        case 2: end = [0, Math.floor(Math.random()*COLS)]; break;
+        case 3: end = [Math.floor(Math.random()*ROWS), COLS-1]; break;
+    }
+
+    maze[start[0]][start[1]] = 'S';
+    maze[end[0]][end[1]] = 'E';
 
     drawMaze();
+}
 
-    function solve() {
-        const queue = [];
-        const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
-        const parent = Array.from({ length: rows }, () => Array(cols).fill(null));
+function drawMaze() {
+    mazeDiv.innerHTML = '';
+    mazeDiv.style.gridTemplateRows = `repeat(${ROWS}, 40px)`;
+    mazeDiv.style.gridTemplateColumns = `repeat(${COLS}, 40px)`;
 
-        let start, end;
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                if (maze[r][c] === 'S') start = [r, c];
-                if (maze[r][c] === 'E') end = [r, c];
-            }
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            if (maze[r][c] === '#') cell.classList.add("wall");
+            if (maze[r][c] === 'S') cell.classList.add("start");
+            if (maze[r][c] === 'E') cell.classList.add("end");
+            mazeDiv.appendChild(cell);
         }
-    
+    }
+}
 
-    queue.push(start);
+function solve() {
+    document.querySelectorAll(".path").forEach(c => c.classList.remove("path"));
+
+    const visited = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+    const parent = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+
+    let start, end;
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            if(maze[r][c]==='S') start=[r,c];
+            if(maze[r][c]==='E') end=[r,c];
+        }
+    }
+
+    const queue = [start];
     visited[start[0]][start[1]] = true;
+    const directions = [[1,0],[-1,0],[0,1],[0,-1]];
 
-    const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    while(queue.length){
+        const [r,c] = queue.shift();
+        if(r===end[0] && c===end[1]) break;
 
-    while (queue.length > 0) {
-        const [r, c] = queue.shift();
-
-        if (r === end[0] && c === end[1]) break;
-
-        for (const [dr, dc] of directions) {
-            const nr = r + dr;
-            const nc = c + dc;
-            if (
-                nr >= 0 && nc >= 0 &&
-                nr < rows && nc < cols &&
-                !visited[nr][nc] &&
-                maze[nr][nc] !== '#'
-            ) {
-                visited[nr][nc] = true;
-                parent[nr][nc] = [r, c];
-                queue.push([nr, nc]);
+        for(const [dr,dc] of directions){
+            const nr = r+dr, nc = c+dc;
+            if(nr>=0 && nc>=0 && nr<ROWS && nc<COLS && !visited[nr][nc] && maze[nr][nc]!=='#'){
+                visited[nr][nc]=true;
+                parent[nr][nc]=[r,c];
+                queue.push([nr,nc]);
             }
         }
     }
 
+    // Reconstruct path
     const path = [];
     let cur = end;
-
-    while (cur && (cur[0] !== start[0] || cur[1] !== start[1])) {
+    while(cur){
         path.push(cur);
+        if(cur[0]===start[0] && cur[1]===start[1]) break;
         cur = parent[cur[0]][cur[1]];
-}
-    path.push(start);
+    }
+
+    if(!cur){
+        alert("No path found! Try generating a new maze.");
+        return;
+    }
+
     path.reverse();
-        
+
     const cells = document.querySelectorAll(".cell");
     let i = 0;
+    const interval = setInterval(()=>{
+        const [r,c] = path[i];
+        const idx = r*COLS + c;
+        if(!cells[idx].classList.contains("start") && !cells[idx].classList.contains("end")){
+            cells[idx].classList.add("path");
+        }
+        i++;
+        if(i>=path.length) clearInterval(interval);
+    }, 100);
+}
 
-    const interval = setInterval(() => {
-        const [r, c] = path[i];
-        const index = r * cols + c;
-
-    cells[index].classList.add("path");
-
-    i++;
-    if (i >= path.length) clearInterval(interval);
-}, 150); // speed in ms
-
-
-    }
+// Generate a maze on first load
+generate();
 </script>
-
-
-
 </body>
 </html>
