@@ -20,10 +20,29 @@
         margin-bottom: 10px;
     }
 
+    #visual-container {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        align-items: flex-start;
+    }
+
     canvas {
-        display: block;
-        margin: 0 auto;
         background: radial-gradient(circle at center, #111, #000);
+        display: block;
+    }
+
+    #stats {
+        width: 200px;
+        text-align: left;
+        color: white;
+        font-size: 14px;
+    }
+
+    #songTitle {
+        margin-top: 10px;
+        font-size: 18px;
+        color: #FFD700; /* gold color for visibility */
     }
 
     button, input {
@@ -46,14 +65,30 @@
 
 <div id="controls">
     <input type="file" id="fileInput" accept="audio/*">
-    <button id="playBtn">Play</button>
+    <button id="playBtn">Play / Pause</button>
 </div>
 
-<canvas id="canvas" width="900" height="400"></canvas>
+<div id="visual-container">
+    <div>
+        <canvas id="canvas" width="900" height="400"></canvas>
+        <div id="songTitle">No song loaded</div>
+    </div>
+
+    <div id="stats">
+        <h3>Music Stats</h3>
+        <p>BPM: <span id="bpm">0</span></p>
+        <p>Time: <span id="currentTime">0</span> / <span id="duration">0</span></p>
+        <p>Average Volume: <span id="avgVolume">0</span></p>
+        <p>Bass: <span id="bass">0</span></p>
+        <p>Mid: <span id="mid">0</span></p>
+        <p>Treble: <span id="treble">0</span></p>
+    </div>
+</div>
 
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+const songTitle = document.getElementById("songTitle");
 
 const audio = new Audio();
 let audioContext, analyser, source;
@@ -65,7 +100,7 @@ function setupAudio() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     analyser = audioContext.createAnalyser();
 
-    analyser.fftSize = 256; // controls detail level
+    analyser.fftSize = 256;
     bufferLength = analyser.frequencyBinCount;
     dataArray = new Uint8Array(bufferLength);
 
@@ -82,6 +117,8 @@ document.getElementById("fileInput").addEventListener("change", e => {
     audio.src = URL.createObjectURL(file);
     audio.load();
 
+    songTitle.textContent = file.name; // Show filename as song title
+
     if (!audioContext) setupAudio();
 });
 
@@ -89,15 +126,14 @@ document.getElementById("fileInput").addEventListener("change", e => {
 document.getElementById("playBtn").addEventListener("click", () => {
     if (!audioContext) return;
 
-    if (audioContext.state === "suspended") {
-        audioContext.resume();
-    }
+    if (audioContext.state === "suspended") audioContext.resume();
 
     if (isPlaying) {
         audio.pause();
     } else {
         audio.play();
         draw();
+        updateStats();
     }
 
     isPlaying = !isPlaying;
@@ -113,6 +149,10 @@ function draw() {
 
     const barWidth = canvas.width / bufferLength;
 
+    // Calculate avg volume for glow
+    const avgVolume = average(dataArray);
+    canvas.style.boxShadow = `0 0 ${Math.min(40, avgVolume/2)}px gold`;
+
     for (let i = 0; i < bufferLength; i++) {
         const value = dataArray[i];
         const barHeight = value * 1.5;
@@ -120,10 +160,38 @@ function draw() {
         const x = i * barWidth;
         const y = canvas.height - barHeight;
 
-        // Color based on frequency
         ctx.fillStyle = `hsl(${i * 2}, 80%, 60%)`;
         ctx.fillRect(x, y, barWidth - 2, barHeight);
     }
+}
+
+// ---------- STATS UPDATE ----------
+function updateStats() {
+    if (!analyser) return;
+
+    analyser.getByteFrequencyData(dataArray);
+
+    const bass = average(dataArray.slice(0, dataArray.length * 0.2));
+    const mid = average(dataArray.slice(dataArray.length * 0.2, dataArray.length * 0.6));
+    const treble = average(dataArray.slice(dataArray.length * 0.6));
+
+    const avgVolume = average(dataArray);
+
+    document.getElementById("bass").textContent = Math.round(bass);
+    document.getElementById("mid").textContent = Math.round(mid);
+    document.getElementById("treble").textContent = Math.round(treble);
+    document.getElementById("avgVolume").textContent = Math.round(avgVolume);
+    document.getElementById("currentTime").textContent = Math.floor(audio.currentTime);
+    document.getElementById("duration").textContent = Math.floor(audio.duration || 0);
+
+    document.getElementById("bpm").textContent = Math.round(bass * 1.2);
+
+    requestAnimationFrame(updateStats);
+}
+
+// ---------- HELPER ----------
+function average(arr) {
+    return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 </script>
 </body>
