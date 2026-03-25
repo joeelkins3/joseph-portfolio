@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bucket List</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #f0f4f2;
+    --parchment: #e3ece7;
+    --ink: #1e2d28;
+    --ink-light: #3d5a4e;
+    --ink-faint: #7a9a8e;
+    --gold: #4a8c6e;        /* forest green — primary accent */
+    --gold-light: #6aab8c;
+    --rust: #3a6e8c;        /* slate blue — secondary accent */
+    --done-bg: #e4edf5;
+    --done-ink: #2e5a7a;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--cream);
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(74, 140, 110, 0.07) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(58, 110, 140, 0.06) 0%, transparent 55%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    font-family: 'Crimson Pro', Georgia, serif;
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  header {
+    text-align: center;
+    padding: 60px 20px 40px;
+    border-bottom: 1px solid rgba(30,45,40,0.12);
+    position: relative;
+  }
+  header::before {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 0 auto 28px;
+  }
+  .eyebrow {
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--gold); }
+  .subtitle {
+    margin-top: 14px;
+    font-size: 1.05rem;
+    color: var(--ink-light);
+    font-style: italic;
+    max-width: 480px;
+    margin-inline: auto;
+    line-height: 1.6;
+  }
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 28px;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .stats span strong {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: -0.02em;
+    text-transform: none;
+  }
+
+  main { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+
+  .add-section {
+    margin: 44px 0 36px;
+    background: white;
+    border: 1px solid rgba(30,45,40,0.1);
+    border-radius: 4px;
+    padding: 28px;
+    box-shadow: 0 2px 12px rgba(30,45,40,0.06), 0 0 0 1px rgba(74,140,110,0.08);
+    position: relative;
+  }
+  .add-section::before {
+    content: '+';
+    position: absolute;
+    top: -16px; left: 28px;
+    width: 32px; height: 32px;
+    background: var(--gold);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(74,140,110,0.3);
+  }
+  .add-section label {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+    padding-top: 4px;
+  }
+  .add-row { display: flex; gap: 10px; align-items: stretch; }
+  .add-row input[type="text"] {
+    flex: 1;
+    border: 1px solid rgba(30,45,40,0.2);
+    border-radius: 3px;
+    padding: 12px 16px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.1rem;
+    color: var(--ink);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .add-row input[type="text"]:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(74,140,110,0.12);
+  }
+  .add-row input[type="text"]::placeholder { color: var(--ink-faint); font-style: italic; }
+  .add-btn {
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    border-radius: 3px;
+    padding: 12px 22px;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .add-btn:hover { background: var(--gold); }
+  .add-btn:active { transform: scale(0.97); }
+
+  .note-row { margin-top: 10px; }
+  .note-row input[type="text"] {
+    width: 100%;
+    border: 1px solid rgba(30,45,40,0.15);
+    border-radius: 3px;
+    padding: 9px 14px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 1rem;
+    color: var(--ink-light);
+    background: transparent;
+    outline: none;
+    font-style: italic;
+    transition: border-color 0.2s;
+  }
+  .note-row input[type="text"]:focus { border-color: var(--gold); }
+  .note-row input[type="text"]::placeholder { color: var(--ink-faint); }
+
+  .filters {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(30,45,40,0.1);
+  }
+  .filter-btn {
+    background: none;
+    border: none;
+    padding: 8px 18px 10px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    letter-spacing: 0.04em;
+    margin-bottom: -1px;
+  }
+  .filter-btn:hover { color: var(--ink); }
+  .filter-btn.active { color: var(--gold); border-bottom-color: var(--gold); font-style: italic; }
+
+  #list { list-style: none; }
+  .item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: start;
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(30,45,40,0.08);
+    animation: fadeIn 0.35s ease both;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .check-wrap { padding-top: 3px; cursor: pointer; }
+  .check-wrap input { display: none; }
+  .check-box {
+    width: 22px; height: 22px;
+    border: 2px solid var(--ink-faint);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .check-wrap input:checked + .check-box { background: var(--done-ink); border-color: var(--done-ink); }
+  .check-wrap input:checked + .check-box::after {
+    content: '';
+    width: 12px; height: 6px;
+    border-left: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(-45deg) translateY(-1px);
+    display: block;
+  }
+
+  .item-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    line-height: 1.4;
+    color: var(--ink);
+    transition: color 0.2s;
+  }
+  .item.done .item-title { text-decoration: line-through; color: var(--ink-faint); }
+  .item-note { margin-top: 4px; font-size: 0.92rem; color: var(--ink-faint); font-style: italic; line-height: 1.4; }
+  .item-meta { margin-top: 6px; font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.06em; }
+  .item.done .item-meta { color: var(--done-ink); opacity: 0.7; }
+
+  .edit-btn {
+    background: none;
+    border: 1px solid rgba(30,45,40,0.12);
+    border-radius: 3px;
+    padding: 4px 10px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .edit-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .edit-form { display: none; margin-top: 10px; }
+  .item.editing .edit-form { display: block; }
+  .item.editing .item-title { display: none; }
+  .item.editing .item-note { display: none; }
+  .edit-form input {
+    width: 100%;
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    padding: 8px 12px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--ink);
+    background: white;
+    outline: none;
+    margin-bottom: 6px;
+  }
+  .edit-form input.note-input { font-family: 'Crimson Pro', serif; font-style: italic; font-size: 0.95rem; }
+  .edit-actions { display: flex; gap: 8px; }
+  .save-btn {
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    border-radius: 3px;
+    padding: 7px 16px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .save-btn:hover { background: var(--gold); }
+  .cancel-btn {
+    background: none;
+    border: 1px solid rgba(30,45,40,0.15);
+    border-radius: 3px;
+    padding: 7px 14px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 1.1rem;
+    display: none;
+  }
+
+  .philosophy {
+    margin: 48px 0 0;
+    padding: 20px 24px;
+    border-left: 3px solid var(--rust);
+    background: rgba(58,110,140,0.05);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--ink-light);
+    line-height: 1.65;
+  }
+  .philosophy strong {
+    font-style: normal;
+    font-family: 'Playfair Display', serif;
+    color: var(--ink);
+  }
+
+  @media (max-width: 480px) {
+    .add-row { flex-direction: column; }
+    .stats { gap: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">A Life Well Lived</p>
+  <h1>My <em>Bucket</em> List</h1>
+  <p class="subtitle">Dreams, adventures, and everything worth doing — recorded forever.</p>
+  <div class="stats">
+    <span><strong id="total-count">0</strong>Total</span>
+    <span><strong id="done-count">0</strong>Done</span>
+    <span><strong id="left-count">0</strong>Remaining</span>
+  </div>
+</header>
+
+<main>
+  <section class="add-section" aria-label="Add a new item">
+    <label for="new-title">Add to your list</label>
+    <div class="add-row">
+      <input type="text" id="new-title" placeholder="Something you've always wanted to do…" maxlength="140" autocomplete="off"/>
+      <button class="add-btn" id="add-btn">Add</button>
+    </div>
+    <div class="note-row">
+      <input type="text" id="new-note" placeholder="Optional note — why does this matter to you?" maxlength="200"/>
+    </div>
+  </section>
+
+  <div class="filters" role="tablist">
+    <button class="filter-btn active" data-filter="all" role="tab">All</button>
+    <button class="filter-btn" data-filter="pending" role="tab">Still to Do</button>
+    <button class="filter-btn" data-filter="done" role="tab">Accomplished</button>
+  </div>
+
+  <ul id="list" aria-label="Bucket list items"></ul>
+  <p class="empty" id="empty-msg">Nothing here yet — or no items match your filter.</p>
+
+  <aside class="philosophy">
+    <strong>Why you can't delete:</strong> Every dream you've ever written down is part of your story.
+    Even the ones you've outgrown, or that didn't go as planned, deserve to stay on the record.
+    You can always update the text — but the wish itself remains.
+  </aside>
+</main>
+
+<script>
+  const STORAGE_KEY = 'bucket-list-v1';
+  let items = [];
+  let filter = 'all';
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) items = JSON.parse(raw);
+    } catch(e) { items = []; }
+    if (!items.length) {
+      items = [
+        { id: uid(), title: 'See the Northern Lights', note: 'Iceland or Norway, ideally in winter.', done: false, doneAt: null, addedAt: now() },
+        { id: uid(), title: 'Learn to make fresh pasta from scratch', note: '', done: true, doneAt: 'March 2024', addedAt: now() },
+      ];
+      save();
+    }
+  }
+
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }
+  function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  function now() { return new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); }
+
+  function render() {
+    const list = document.getElementById('list');
+    const empty = document.getElementById('empty-msg');
+    const visible = items.filter(i => {
+      if (filter === 'pending') return !i.done;
+      if (filter === 'done')    return i.done;
+      return true;
+    });
+    list.innerHTML = '';
+    empty.style.display = visible.length ? 'none' : 'block';
+    visible.forEach(item => list.appendChild(makeRow(item)));
+    updateStats();
+  }
+
+  function makeRow(item) {
+    const li = document.createElement('li');
+    li.className = 'item' + (item.done ? ' done' : '');
+    li.dataset.id = item.id;
+    li.innerHTML = `
+      <label class="check-wrap" title="${item.done ? 'Mark as not done' : 'Mark as done'}">
+        <input type="checkbox" ${item.done ? 'checked' : ''}/>
+        <span class="check-box"></span>
+      </label>
+      <div class="item-body">
+        <div class="item-title">${esc(item.title)}</div>
+        ${item.note ? `<div class="item-note">${esc(item.note)}</div>` : ''}
+        <div class="item-meta">${item.done && item.doneAt ? `✓ Accomplished ${item.doneAt}` : `Added ${item.addedAt}`}</div>
+        <div class="edit-form">
+          <input type="text" class="title-input" value="${esc(item.title)}" maxlength="140" placeholder="What do you want to do?"/>
+          <input type="text" class="note-input" value="${esc(item.note)}" maxlength="200" placeholder="Optional note…"/>
+          <div class="edit-actions">
+            <button class="save-btn">Save</button>
+            <button class="cancel-btn">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <button class="edit-btn" aria-label="Edit item">Edit</button>
+    `;
+    li.querySelector('input[type=checkbox]').addEventListener('change', e => {
+      const idx = items.findIndex(x => x.id === item.id);
+      items[idx].done = e.target.checked;
+      items[idx].doneAt = e.target.checked ? now() : null;
+      save(); render();
+    });
+    li.querySelector('.edit-btn').addEventListener('click', () => li.classList.toggle('editing'));
+    li.querySelector('.save-btn').addEventListener('click', () => {
+      const newTitle = li.querySelector('.title-input').value.trim();
+      if (!newTitle) return;
+      const idx = items.findIndex(x => x.id === item.id);
+      items[idx].title = newTitle;
+      items[idx].note  = li.querySelector('.note-input').value.trim();
+      save(); render();
+    });
+    li.querySelector('.cancel-btn').addEventListener('click', () => li.classList.remove('editing'));
+    return li;
+  }
+
+  function esc(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function updateStats() {
+    const total = items.length;
+    const done  = items.filter(i => i.done).length;
+    document.getElementById('total-count').textContent = total;
+    document.getElementById('done-count').textContent  = done;
+    document.getElementById('left-count').textContent  = total - done;
+  }
+
+  function addItem() {
+    const titleEl = document.getElementById('new-title');
+    const noteEl  = document.getElementById('new-note');
+    const title   = titleEl.value.trim();
+    if (!title) { titleEl.focus(); return; }
+    items.unshift({ id: uid(), title, note: noteEl.value.trim(), done: false, doneAt: null, addedAt: now() });
+    titleEl.value = '';
+    noteEl.value  = '';
+    titleEl.focus();
+    save();
+    setFilter('all');
+    render();
+  }
+
+  document.getElementById('add-btn').addEventListener('click', addItem);
+  document.getElementById('new-title').addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
+
+  function setFilter(f) {
+    filter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => { setFilter(btn.dataset.filter); render(); });
+  });
+
+  load();
+  render();
+</script>
+</body>
+</html>
