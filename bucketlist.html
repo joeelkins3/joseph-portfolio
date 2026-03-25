@@ -14,9 +14,9 @@
     --ink: #1e2d28;
     --ink-light: #3d5a4e;
     --ink-faint: #7a9a8e;
-    --gold: #4a8c6e;        /* forest green — primary accent */
+    --gold: #4a8c6e;
     --gold-light: #6aab8c;
-    --rust: #3a6e8c;        /* slate blue — secondary accent */
+    --rust: #3a6e8c;
     --done-bg: #e4edf5;
     --done-ink: #2e5a7a;
   }
@@ -374,7 +374,7 @@
   <p class="empty" id="empty-msg">Nothing here yet — or no items match your filter.</p>
 
   <aside class="philosophy">
-    <strong>Why you can't delete:</strong> Everything you’ve ever wanted to do started as a dream—no matter how small. And it’s important to hold onto those dreams, because they’re what make us feel truly alive.
+    <strong>Why you can't delete:</strong> Everything you've ever wanted to do started as a dream—no matter how small. And it's important to hold onto those dreams, because they're what make us feel truly alive.
   </aside>
 </main>
 
@@ -499,5 +499,25 @@
   load();
   render();
 </script>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBaL57yogODnYypT3Lq-c_D_0Y_wJdROoQ",
+    authDomain: "ressentir-9d3c9.firebaseapp.com",
+    projectId: "ressentir-9d3c9",
+    storageBucket: "ressentir-9d3c9.firebasestorage.app",
+    messagingSenderId: "450226603073",
+    appId: "1:450226603073:web:09130cf81d8f79cba272c0",
+    measurementId: "G-HZ85MLGH5T"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+
 </body>
 </html>
