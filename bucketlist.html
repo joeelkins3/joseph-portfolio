@@ -616,4 +616,282 @@
     <div class="community-form">
       <div class="name-row">
         <input type="text" id="community-name" placeholder="Your name (optional)" maxlength="60" autocomplete="off"/>
-        <label class="anon-
+        <label class="anon-label">
+          <input type="checkbox" id="anon-check"/> Stay anonymous
+        </label>
+      </div>
+      <div class="top3-slots">
+        <div class="top3-slot"><span class="slot-num">1</span><input type="text" class="top3-input" placeholder="Your #1 bucket list item…" maxlength="140"/></div>
+        <div class="top3-slot"><span class="slot-num">2</span><input type="text" class="top3-input" placeholder="Your #2 bucket list item…" maxlength="140"/></div>
+        <div class="top3-slot"><span class="slot-num">3</span><input type="text" class="top3-input" placeholder="Your #3 bucket list item…" maxlength="140"/></div>
+      </div>
+      <button class="submit-btn" id="community-submit">Share My Top 3</button>
+      <p class="submit-msg" id="submit-msg">Thanks for sharing! ✦</p>
+    </div>
+    <p class="loading-msg" id="loading-msg">Loading submissions…</p>
+    <ul class="community-list" id="community-list"></ul>
+    <p class="community-empty" id="community-empty" style="display:none">No submissions yet — be the first!</p>
+  </section>
+</main>
+
+<script>
+  const STORAGE_KEY = 'bucket-list-v1';
+  let items = [];
+  let filter = 'all';
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) items = JSON.parse(raw);
+    } catch(e) { items = []; }
+    if (!items.length) {
+      items = [
+        { id: uid(), title: 'See the Northern Lights', note: 'Iceland or Norway, ideally in winter.', done: false, doneAt: null, addedAt: now() },
+        { id: uid(), title: 'Learn to make fresh pasta from scratch', note: '', done: true, doneAt: 'March 2024', addedAt: now() },
+      ];
+      save();
+    }
+  }
+
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }
+  function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  function now() { return new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); }
+  function wordCount(str) { return str.trim().split(/\s+/).filter(Boolean).length; }
+
+  function render() {
+    const list = document.getElementById('list');
+    const empty = document.getElementById('empty-msg');
+    const visible = items.filter(i => {
+      if (filter === 'pending') return !i.done;
+      if (filter === 'done')    return i.done;
+      return true;
+    });
+    list.innerHTML = '';
+    empty.style.display = visible.length ? 'none' : 'block';
+    visible.forEach(item => list.appendChild(makeRow(item)));
+    updateStats();
+  }
+
+  function makeRow(item) {
+    const li = document.createElement('li');
+    li.className = 'item' + (item.done ? ' done' : '');
+    li.dataset.id = item.id;
+    li.innerHTML = `
+      <label class="check-wrap" title="${item.done ? 'Mark as not done' : 'Mark as done'}">
+        <input type="checkbox" ${item.done ? 'checked' : ''}/>
+        <span class="check-box"></span>
+      </label>
+      <div class="item-body">
+        <div class="item-title">${esc(item.title)}</div>
+        ${item.note ? `<div class="item-note">${esc(item.note)}</div>` : ''}
+        <div class="item-meta">${item.done && item.doneAt ? `✓ Accomplished ${item.doneAt}` : `Added ${item.addedAt}`}</div>
+        <div class="edit-form">
+          <input type="text" class="title-input" value="${esc(item.title)}" maxlength="140" placeholder="What do you want to do?"/>
+          <input type="text" class="note-input" value="${esc(item.note)}" maxlength="200" placeholder="Optional note…"/>
+          <div class="edit-actions">
+            <button class="save-btn">Save</button>
+            <button class="cancel-btn">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <button class="edit-btn" aria-label="Edit item">Edit</button>
+    `;
+    li.querySelector('input[type=checkbox]').addEventListener('change', e => {
+      const idx = items.findIndex(x => x.id === item.id);
+      items[idx].done = e.target.checked;
+      items[idx].doneAt = e.target.checked ? now() : null;
+      save(); render();
+    });
+    li.querySelector('.edit-btn').addEventListener('click', () => li.classList.toggle('editing'));
+    li.querySelector('.save-btn').addEventListener('click', () => {
+      const newTitle = li.querySelector('.title-input').value.trim();
+      if (!newTitle) return;
+      const idx = items.findIndex(x => x.id === item.id);
+      items[idx].title = newTitle;
+      items[idx].note  = li.querySelector('.note-input').value.trim();
+      save(); render();
+    });
+    li.querySelector('.cancel-btn').addEventListener('click', () => li.classList.remove('editing'));
+    return li;
+  }
+
+  function esc(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function updateStats() {
+    const total = items.length;
+    const done  = items.filter(i => i.done).length;
+    document.getElementById('total-count').textContent = total;
+    document.getElementById('done-count').textContent  = done;
+    document.getElementById('left-count').textContent  = total - done;
+  }
+
+  function addItem() {
+    const titleEl = document.getElementById('new-title');
+    const noteEl  = document.getElementById('new-note');
+    const title   = titleEl.value.trim();
+    if (!title) { titleEl.focus(); return; }
+    items.unshift({ id: uid(), title, note: noteEl.value.trim(), done: false, doneAt: null, addedAt: now() });
+    titleEl.value = '';
+    noteEl.value  = '';
+    titleEl.focus();
+    save();
+    setFilter('all');
+    render();
+  }
+
+  document.getElementById('add-btn').addEventListener('click', addItem);
+  document.getElementById('new-title').addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
+
+  function setFilter(f) {
+    filter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => { setFilter(btn.dataset.filter); render(); });
+  });
+
+  load();
+  render();
+</script>
+
+<!-- Firebase + Firestore -->
+<script type="module">
+  import { initializeApp }                         from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getAnalytics }                          from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+  import { getFirestore, collection, addDoc,
+           onSnapshot, query, orderBy,
+           doc, updateDoc, arrayUnion, Timestamp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBaL57yogODnYypT3Lq-c_D_0Y_wJdROoQ",
+    authDomain: "ressentir-9d3c9.firebaseapp.com",
+    projectId: "ressentir-9d3c9",
+    storageBucket: "ressentir-9d3c9.firebasestorage.app",
+    messagingSenderId: "450226603073",
+    appId: "1:450226603073:web:09130cf81d8f79cba272c0",
+    measurementId: "G-HZ85MLGH5T"
+  };
+
+  const app    = initializeApp(firebaseConfig);
+  try { getAnalytics(app); } catch(e) {}
+  const db     = getFirestore(app);
+  const colRef = collection(db, 'community');
+
+  function esc(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function wordCount(str) { return str.trim().split(/\s+/).filter(Boolean).length; }
+  function now() { return new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); }
+
+  // ── Real-time listener ──
+  const q = query(colRef, orderBy('createdAt', 'desc'));
+  onSnapshot(q, snapshot => {
+    document.getElementById('loading-msg').style.display = 'none';
+    const list  = document.getElementById('community-list');
+    const empty = document.getElementById('community-empty');
+    list.innerHTML = '';
+    empty.style.display = snapshot.empty ? 'block' : 'none';
+
+    snapshot.forEach(docSnap => {
+      const entry    = { id: docSnap.id, ...docSnap.data() };
+      const comments = entry.comments || [];
+      const li       = document.createElement('li');
+      li.className   = 'community-item';
+      li.innerHTML   = `
+        <div class="community-item-header">
+          <span class="community-name">${esc(entry.name)}</span>
+          <span class="community-date">${entry.submittedAt || ''}</span>
+        </div>
+        <div class="community-picks">
+          ${(entry.picks || []).map((p, i) => `
+            <div class="community-pick">
+              <span class="pick-num">${i + 1}</span>
+              <span class="pick-text">${esc(p)}</span>
+            </div>`).join('')}
+        </div>
+        <div class="comments-section">
+          <ul class="comments-list">
+            ${comments.length === 0
+              ? `<p class="no-comments">No comments yet — say something!</p>`
+              : comments.map(c => `
+                  <li class="comment-item">
+                    <span class="comment-author">${esc(c.author)}:</span>${esc(c.text)}
+                  </li>`).join('')}
+          </ul>
+          <div class="comment-form">
+            <div class="comment-inputs">
+              <input type="text" class="comment-name-input" placeholder="Your name (optional)" maxlength="60"/>
+              <div class="comment-text-wrap">
+                <textarea class="comment-textarea" placeholder="Leave a comment… (50 word limit)" rows="2"></textarea>
+              </div>
+            </div>
+            <div class="comment-footer">
+              <span class="word-count">0 / 50 words</span>
+              <button class="comment-submit">Post</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const textarea = li.querySelector('.comment-textarea');
+      const counter  = li.querySelector('.word-count');
+      textarea.addEventListener('input', () => {
+        const wc = wordCount(textarea.value);
+        counter.textContent = `${wc} / 50 words`;
+        counter.classList.toggle('over', wc > 50);
+      });
+
+      li.querySelector('.comment-submit').addEventListener('click', async () => {
+        const text = textarea.value.trim();
+        if (!text) return;
+        if (wordCount(text) > 50) { counter.classList.add('over'); return; }
+        const author = li.querySelector('.comment-name-input').value.trim() || 'Anonymous';
+        await updateDoc(doc(db, 'community', entry.id), {
+          comments: arrayUnion({ author, text, postedAt: now() })
+        });
+        textarea.value = '';
+        counter.textContent = '0 / 50 words';
+      });
+
+      list.appendChild(li);
+    });
+  });
+
+  // ── Submit Top 3 ──
+  document.getElementById('anon-check').addEventListener('change', e => {
+    document.getElementById('community-name').disabled = e.target.checked;
+    document.getElementById('community-name').style.opacity = e.target.checked ? '0.4' : '1';
+  });
+
+  document.getElementById('community-submit').addEventListener('click', async () => {
+    const inputs  = document.querySelectorAll('.top3-input');
+    const picks   = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+    if (!picks.length) { inputs[0].focus(); return; }
+    const isAnon  = document.getElementById('anon-check').checked;
+    const nameVal = document.getElementById('community-name').value.trim();
+    const name    = isAnon ? 'Anonymous' : (nameVal || 'Anonymous');
+
+    await addDoc(colRef, {
+      name,
+      picks,
+      comments: [],
+      submittedAt: now(),
+      createdAt: Timestamp.now()
+    });
+
+    inputs.forEach(i => i.value = '');
+    document.getElementById('community-name').value = '';
+    document.getElementById('anon-check').checked = false;
+    document.getElementById('community-name').disabled = false;
+    document.getElementById('community-name').style.opacity = '1';
+    const msg = document.getElementById('submit-msg');
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 3000);
+  });
+</script>
+
+</body>
+</html>
